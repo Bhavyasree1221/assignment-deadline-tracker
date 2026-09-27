@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}{% block eyebrow %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-heading heading-row">
+  <div><p class="eyebrow">YOUR SEMESTER, IN VIEW</p><h1>Assignment dashboard<span class="heading-period">.</span></h1><p class="page-intro">A clear view of what is due, what is moving, and what needs attention.</p></div>
+  <a class="button button-primary" href="{{ url_for('add_assignment') }}"><span aria-hidden="true">+</span> Add assignment</a>
+</div>
+<section class="stat-grid" aria-label="Assignment totals">
+  <a class="stat-card stat-total" href="{{ url_for('assignments') }}"><span class="stat-label">TOTAL ASSIGNMENTS</span><strong>{{ counts.total }}</strong><span class="stat-foot">Across all subjects <span aria-hidden="true">↗</span></span></a>
+  <a class="stat-card" href="{{ url_for('assignments', status='Pending') }}"><span class="stat-label">PENDING</span><strong>{{ counts.pending }}</strong><span class="stat-foot">Ready to begin</span></a>
+  <a class="stat-card" href="{{ url_for('assignments', status='In Progress') }}"><span class="stat-label">IN PROGRESS</span><strong>{{ counts.in_progress }}</strong><span class="stat-foot">Currently underway</span></a>
+  <a class="stat-card" href="{{ url_for('assignments', status='Completed') }}"><span class="stat-label">COMPLETED</span><strong>{{ counts.completed }}</strong><span class="stat-foot">Finished assignments</span></a>
+  <a class="stat-card stat-attention" href="{{ url_for('assignments', priority='High') }}"><span class="stat-label">HIGH PRIORITY</span><strong>{{ counts.high_priority }}</strong><span class="stat-foot">Score of 6 or more</span></a>
+  <a class="stat-card stat-overdue" href="{{ url_for('assignments', deadline_state='overdue') }}"><span class="stat-label">OVERDUE</span><strong>{{ counts.overdue }}</strong><span class="stat-foot">Past the deadline</span></a>
+  <a class="stat-card stat-soon" href="{{ url_for('assignments', deadline_state='soon') }}"><span class="stat-label">DUE SOON</span><strong>{{ counts.due_soon }}</strong><span class="stat-foot">Within the next 3 days</span></a>
+</section>
+<div class="dashboard-grid">
+  <section class="panel priority-panel">
+    <div class="section-heading"><div><p class="eyebrow">NEXT BEST ACTION</p><h2>Top priorities</h2></div><a class="text-link" href="{{ url_for('priority_page') }}">Full priority list <span aria-hidden="true">→</span></a></div>
+    {% if priority_list %}<div class="priority-mini-list">
+      {% for item in priority_list %}<a class="priority-mini" href="{{ url_for('view_assignment', assignment_id=item.id) }}">
+        <span class="rank-number">{{ '%02d'|format(item.rank) }}</span><span class="priority-mini-main"><strong>{{ item.name }}</strong><small>{{ item.subject }} · {{ item.difficulty }} · {{ item.estimated_hours|round(2) }} hrs</small></span>
+        <span class="priority-mini-deadline"><b>{{ item.remaining_days if item.remaining_days >= 0 else item.remaining_days|abs }}{% if item.remaining_days >= 0 %}d{% else %}d late{% endif %}</b><small>Score {{ item.priority_score }}</small></span>
+      </a>{% endfor %}
+    </div>{% else %}<div class="empty-state"><span class="empty-mark">0</span><h3>Nothing needs prioritizing</h3><p>Add an assignment to build your live priority queue.</p><a class="text-link" href="{{ url_for('add_assignment') }}">Add your first assignment →</a></div>{% endif %}
+  </section>
+  <section class="panel upcoming-panel">
+    <div class="section-heading"><div><p class="eyebrow">WHAT'S COMING UP</p><h2>Upcoming deadlines</h2></div><a class="icon-link" href="{{ url_for('assignments') }}" aria-label="View all assignments">↗</a></div>
+    {% if upcoming %}<div class="upcoming-list">{% for item in upcoming %}<a class="upcoming-item" href="{{ url_for('view_assignment', assignment_id=item.id) }}"><span class="date-chip {% if item.remaining_days <= 2 %}date-chip-urgent{% endif %}"><b>{{ item.deadline[8:10] }}</b><small>{{ item.deadline[5:7] }}</small></span><span class="upcoming-copy"><strong>{{ item.name }}</strong><small>{{ item.subject }}</small></span><span class="due-label {% if item.remaining_days < 0 %}text-danger{% elif item.remaining_days <= 2 %}text-warning{% endif %}">{% if item.remaining_days < 0 %}{{ item.remaining_days|abs }}d late{% elif item.remaining_days == 0 %}Today{% elif item.remaining_days == 1 %}Tomorrow{% else %}{{ item.remaining_days }}d{% endif %}</span></a>{% endfor %}</div>
+    {% else %}<div class="empty-inline">No upcoming deadlines. Your schedule is clear.</div>{% endif %}
+  </section>
+  <section class="panel status-panel">
+    <div class="section-heading"><div><p class="eyebrow">WORKLOAD SNAPSHOT</p><h2>Assignment status</h2></div><span class="muted-count">{{ counts.total }} total</span></div>
+    {% if counts.total %}<div class="status-bars">
+      {% for label, value, class_name in [('Pending', counts.pending, 'bar-pending'), ('In progress', counts.in_progress, 'bar-progress'), ('Completed', counts.completed, 'bar-complete')] %}<div class="status-row"><div><span>{{ label }}</span><b>{{ value }}</b></div><div class="meter"><span class="{{ class_name }}" style="width: {{ (value * 100 / counts.total)|round|int }}%"></span></div></div>{% endfor %}
+    </div>{% else %}<div class="empty-inline">Your status breakdown will appear after the first assignment.</div>{% endif %}
+  </section>
+  <section class="panel activity-panel">
+    <div class="section-heading"><div><p class="eyebrow">LAST IN, FIRST OUT</p><h2>Recent activity <span class="stack-tag">STACK</span></h2></div><a class="text-link" href="{{ url_for('data_structures_page') }}">See how it works</a></div>
+    {% if activities %}<div class="activity-list">{% for item in activities %}<div class="activity-item"><span class="activity-marker">{{ loop.index }}</span><span><strong>{{ item.action }} <em>{{ item.assignment_name }}</em></strong><small>{{ item.created_at|replace('T', ' ') }}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-inline">Actions you take will appear here, newest first.</div>{% endif %}
+  </section>
+</div>
+<div class="model-note"><span class="model-dot"></span><span><strong>Project-defined priority model</strong> &nbsp;Difficulty score + deadline urgency score. This is a learning model, not an industry standard.</span><a href="{{ url_for('priority_page') }}">View formula →</a></div>
+{% endblock %}

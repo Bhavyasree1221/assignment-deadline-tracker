@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}Database unavailable{% endblock %}{% block eyebrow %}Temporary issue{% endblock %}
+{% block content %}
+<div class="panel large-empty"><span class="empty-mark">!</span><h2>Your assignments are temporarily unavailable</h2><p>The local database returned an error. Your saved data has not been intentionally changed.</p><a class="button button-primary" href="{{ url_for('dashboard') }}">Try again</a></div>
+{% endblock %}
